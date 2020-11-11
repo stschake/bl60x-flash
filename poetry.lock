@@ -1,0 +1,18 @@
+[[package]]
+name = "pyserial"
+version = "3.4"
+description = "Python Serial Port Extension"
+category = "main"
+optional = false
+python-versions = "*"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.8"
+content-hash = "8ebcd9dce809d3a3fe77bc1bbaf0ec966070f8965fd7eac32e46a693531dae12"
+
+[metadata.files]
+pyserial = [
+    {file = "pyserial-3.4-py2.py3-none-any.whl", hash = "sha256:e0770fadba80c31013896c7e6ef703f72e7834965954a78e71a3049488d4d7d8"},
+    {file = "pyserial-3.4.tar.gz", hash = "sha256:6e2d401fdee0eab996cf734e67773a0143b932772ca8b42451440cfed942c627"},
+]

@@ -180,31 +180,40 @@ def efl_program_img(ser, addr, data):
     print('Verified by XIP SHA256 hash')
     return True
 
-def prepend_fw_header(img):
+def prepend_fw_header(img, header_file):
     if img[0:4] == 'BFNP':
         print('Image already has FW header')
         return
-    with open('contrib/bootheader.bin', 'rb') as f:
+    with open(header_file, 'rb') as f:
         header = f.read()
     img = header + (b'\xFF' * (4096-len(header))) + img
     return img
 
+def get_contrib_path(name):
+    sep = os.path.sep
+    return os.path.dirname(os.path.realpath(__file__)) + sep + 'contrib' + sep + name
+
 def main():
-    ser = Serial("COM4", baudrate=500000, timeout=2)
+    if len(sys.argv) < 3:
+        print(f'Usage: {sys.argv[0]} <serial port> <firmware bin>')
+        sys.exit(1)
+
+    contrib_path = os.path.realpath(__file__) + os.path.sep + 'contrib' + os.path.sep
+    ser = Serial(sys.argv[1], baudrate=500000, timeout=2)
     handshake(ser)
     reset(ser)
     send_sync(ser)
     time.sleep(0.1)
     print('Loading helper binary')
-    load_image(ser, 'contrib/eflash_loader_40m.bin')
+    load_image(ser, get_contrib_path('eflash_loader_40m.bin'))
     time.sleep(0.2)
 
     # at this point, the eflash loader binary is running with efl_ commands
     # TODO: we could change to 2M baudrate here
     send_sync(ser)
-    with open('bl602_demo_wifi.bin', 'rb') as f:
+    with open(sys.argv[2], 'rb') as f:
         data = f.read()
-    data = prepend_fw_header(data)
+    data = prepend_fw_header(data, get_contrib_path('bootheader.bin'))
     efl_program_img(ser, 0x10000, data)
 
 if __name__ == "__main__":
