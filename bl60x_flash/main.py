@@ -1,4 +1,5 @@
 from serial import Serial
+from tqdm import tqdm
 import binascii
 import hashlib
 import struct
@@ -90,11 +91,12 @@ def load_image(ser, file):
     cmd_load_boot_header(ser, image)
     total = cmd_load_seg_header(ser, image)
     sent = 0
-    while sent != total:
-        chunk = image.read(min(total-sent, 4080))
-        cmd_load_seg_data(ser, chunk)
-        sent = sent + len(chunk)
-        print(f'Loaded {sent}/{total}')
+    with tqdm(total=total, unit='byte', unit_scale=True) as pbar:
+        while sent != total:
+            chunk = image.read(min(total-sent, 4080))
+            cmd_load_seg_data(ser, chunk)
+            sent = sent + len(chunk)
+            pbar.update(len(chunk))
     cmd_check_image(ser)
     cmd_run_image(ser)
 
@@ -106,7 +108,7 @@ def empty_buffer(ser):
 
 def send_sync(ser):
     empty_buffer(ser)
-    ser.write(b'\x55' * int(0.003 * ser.baudrate / 10))
+    ser.write(b'\x55' * int(0.006 * ser.baudrate / 10))
     expect_ok(ser)
 
 def efl_write_cmd(ser, id, payload = b''):
@@ -160,12 +162,13 @@ def efl_program_img(ser, addr, data):
 
     print(f'Programming {data_len} bytes @ {hex(addr)}')
     sent = 0
-    while sent != data_len:
-        buf_len = min(2048, data_len - sent)
-        buf = data[sent:sent + buf_len]
-        efl_cmd_flash_write(ser, addr + sent, buf)
-        sent = sent + buf_len
-        print(f'Written {sent}/{data_len}')
+    with tqdm(total=data_len, unit='byte', unit_scale=True) as pbar:
+        while sent != data_len:
+            buf_len = min(2048, data_len - sent)
+            buf = data[sent:sent + buf_len]
+            efl_cmd_flash_write(ser, addr + sent, buf)
+            sent = sent + buf_len
+            pbar.update(buf_len)
     efl_cmd_flash_write_check(ser)
 
     sha256sum = hashlib.sha256(data).digest()
@@ -198,7 +201,6 @@ def main():
         print(f'Usage: {sys.argv[0]} <serial port> <firmware bin>')
         sys.exit(1)
 
-    contrib_path = os.path.realpath(__file__) + os.path.sep + 'contrib' + os.path.sep
     ser = Serial(sys.argv[1], baudrate=500000, timeout=2)
     handshake(ser)
     reset(ser)
@@ -207,9 +209,11 @@ def main():
     print('Loading helper binary')
     load_image(ser, get_contrib_path('eflash_loader_40m.bin'))
     time.sleep(0.2)
+    print()
 
     # at this point, the eflash loader binary is running with efl_ commands
-    # TODO: we could change to 2M baudrate here
+    # (which seems to work with a higher baudrate)
+    ser.baudrate = 2000000
     send_sync(ser)
     with open(sys.argv[2], 'rb') as f:
         data = f.read()
