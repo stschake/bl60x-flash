@@ -184,9 +184,9 @@ def efl_program_img(ser, addr, data):
     return True
 
 def prepend_fw_header(img, header_file):
-    if img[0:4] == 'BFNP':
+    if img[0:4] == b'BFNP':
         print('Image already has FW header')
-        return
+        return img
     with open(header_file, 'rb') as f:
         header = f.read()
     img = header + (b'\xFF' * (4096-len(header))) + img

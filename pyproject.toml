@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bl60x-flash"
-version = "0.1.3"
+version = "0.1.4"
 description = "Flash tool for Bouffalo Labs BL60x UART bootloader"
 authors = ["Stefan Schake <stschake@gmail.com>"]
 license = "MIT"
