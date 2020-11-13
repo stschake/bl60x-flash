@@ -123,6 +123,10 @@ def efl_cmd_read_memory(ser, addr):
     efl_write_cmd(ser, 0x51, struct.pack('<II', addr, 0x4))
     return expect_data(ser)
 
+def efl_cmd_write_memory(ser, addr, data):
+    efl_write_cmd(ser, 0x50, struct.pack('<I', len(data)) + data)
+    expect_ok(ser)
+
 def efl_cmd_read_jid(ser):
     efl_write_cmd(ser, 0x36)
     return expect_data(ser)
@@ -154,6 +158,10 @@ def efl_cmd_flash_xip_read_sha(ser, addr, len):
 
 def efl_cmd_flash_xip_read_finish(ser):
     efl_write_cmd(ser, 0x61)
+    expect_ok(ser)
+
+def efl_cmd_reset(ser):
+    efl_write_cmd(ser, 0x21)
     expect_ok(ser)
 
 def efl_program_img(ser, addr, data):
@@ -219,6 +227,7 @@ def main():
         data = f.read()
     data = prepend_fw_header(data, get_contrib_path('bootheader.bin'))
     efl_program_img(ser, 0x10000, data)
+    efl_cmd_reset(ser)
 
 if __name__ == "__main__":
     main()
