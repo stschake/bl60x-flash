@@ -50,6 +50,8 @@ def handshake(ser):
 
 def expect_ok(ser):
     data = ser.read(2)
+    if len(data) < 2:
+        raise Exception('No answer')
     if data[0] != 0x4f or data[1] != 0x4b:
         err = ser.read(2)
         raise ValueError(binascii.hexlify(err))
